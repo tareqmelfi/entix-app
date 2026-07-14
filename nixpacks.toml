@@ -1,0 +1,9 @@
+[phases.install]
+cmds = ["corepack enable && corepack prepare pnpm@9.15.1 --activate", "pnpm install --frozen-lockfile"]
+
+[phases.build]
+cmds = ["pnpm build"]
+depends_on = ["install"]
+
+[start]
+cmd = "pnpm start"
