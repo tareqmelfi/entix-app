@@ -5,3 +5,21 @@ services:
       dockerfile: docker/Dockerfile
     ports:
       - "3000:3000"
+    environment:
+      - DATABASE_URL
+      - MIGRATION_DATABASE_URL
+      - PG_ADMIN_URL
+      - BETTER_AUTH_URL
+      - BETTER_AUTH_SECRET
+      - GOOGLE_CLIENT_ID
+      - GOOGLE_CLIENT_SECRET
+      - ENTIX_AUTH_MODE
+      - ENTIX_ADMIN_EMAILS
+      - NEXT_PUBLIC_APP_URL
+      - NODE_ENV
+    networks:
+      - coolify
+
+networks:
+  coolify:
+    external: true
