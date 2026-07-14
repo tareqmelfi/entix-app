@@ -1,9 +1,12 @@
 [phases.install]
 cmds = ["npm install -g pnpm@9.15.1", "pnpm install --frozen-lockfile"]
 
+[phases.setup]
+nix_pkgs = ["nodejs_20"]
+
 [phases.build]
 cmds = ["pnpm prisma generate", "pnpm build"]
 depends_on = ["install"]
 
 [start]
-cmd = "npx next start -p 3000"
+cmd = "./node_modules/.bin/next start -p 3000"
