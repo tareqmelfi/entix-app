@@ -1,0 +1,2 @@
+# Prisma migration lock for entix_app_core
+provider = "postgresql"

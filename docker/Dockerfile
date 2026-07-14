@@ -1,4 +1,4 @@
-# Dockerfile — Entix.app (Next.js 14 standalone + Prisma)
+# Dockerfile — Entix.app (Next.js 14 standalone + Prisma + psql)
 # Multi-stage build for minimal production image.
 
 # ── 1. deps: install dependencies ──
@@ -21,6 +21,7 @@ RUN pnpm build
 
 # ── 3. runner: minimal runtime ──
 FROM node:20-alpine AS runner
+RUN apk add --no-cache postgresql-client
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -32,6 +33,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
 COPY --chown=nextjs:nodejs docker/entrypoint.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
 

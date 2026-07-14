@@ -1,0 +1,15 @@
+services:
+  entix-app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    networks:
+      - coolify
+
+networks:
+  coolify:
+    external: true
