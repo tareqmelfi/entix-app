@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile
     ports:
-      - "3000:3000"
+      - "3000"
     environment:
       - DATABASE_URL
       - MIGRATION_DATABASE_URL
@@ -17,9 +17,3 @@ services:
       - ENTIX_ADMIN_EMAILS
       - NEXT_PUBLIC_APP_URL
       - NODE_ENV
-    networks:
-      - coolify
-
-networks:
-  coolify:
-    external: true
