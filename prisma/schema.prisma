@@ -1,0 +1,425 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["auth", "app", "content", "automation", "audit"]
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+  sessions      Session[]
+  accounts      Account[]
+  memberships   Membership[]
+
+  @@map("user")
+  @@schema("auth")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+  @@schema("auth")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@index([userId])
+  @@map("account")
+  @@schema("auth")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+  @@schema("auth")
+}
+
+model Organization {
+  id          String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  slug        String               @unique
+  status      OrganizationStatus   @default(ACTIVE)
+  countryCode String               @default("SA")
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  companies   Company[]
+  memberships Membership[]
+  invites     InviteAllowlist[]
+  auditEvents AuditEvent[]
+
+  @@schema("app")
+}
+
+model Membership {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String
+  organizationId String         @db.Uuid
+  role           MembershipRole @default(OPERATIONS_MEMBER)
+  status         MembershipStatus @default(ACTIVE)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId, role])
+  @@schema("app")
+}
+
+model InviteAllowlist {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email          String         @unique
+  organizationId String?        @db.Uuid
+  role           MembershipRole @default(OPERATIONS_MEMBER)
+  status         InviteStatus   @default(ACTIVE)
+  invitedBy      String?
+  acceptedAt     DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organization   Organization?  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status])
+  @@schema("app")
+}
+
+model Company {
+  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId        String                  @db.Uuid
+  legalName             String
+  tradeName             String?
+  jurisdiction          String                  @default("SA")
+  registrationNumber    String?
+  taxNumber             String?
+  status                CompanyStatus           @default(ACTIVE)
+  healthScore           Int                     @default(0)
+  profileCompletion     Int                     @default(0)
+  accountingExternalId  String?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  organization          Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  requirements          CompanyRequirement[]
+  documents             CompanyDocument[]
+  tasks                 OperationTask[]
+  accountingConnections AccountingConnection[]
+  accountingSnapshots   AccountingSnapshot[]
+
+  @@index([organizationId, status])
+  @@schema("app")
+}
+
+model CompanyRequirement {
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyId   String            @db.Uuid
+  area        RequirementArea
+  title       String
+  description String?
+  status      RequirementStatus @default(MISSING)
+  severity    RequirementSeverity @default(MEDIUM)
+  source      String            @default("manual")
+  dueDate     DateTime?
+  resolvedAt  DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  company     Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, area, title])
+  @@index([companyId, area, status])
+  @@schema("app")
+}
+
+model CompanyDocument {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyId   String         @db.Uuid
+  title       String
+  category    DocumentCategory
+  status      DocumentStatus @default(MISSING)
+  storageKey  String?
+  issuedAt    DateTime?
+  expiresAt   DateTime?
+  pageCount   Int?
+  uploadedBy  String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  company     Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, category, title])
+  @@index([companyId, category, status])
+  @@schema("content")
+}
+
+model OperationTask {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyId   String        @db.Uuid
+  title       String
+  description String?
+  module      OperationModule
+  status      TaskStatus     @default(OPEN)
+  priority    TaskPriority   @default(MEDIUM)
+  ownerUserId String?
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, module, status])
+  @@schema("automation")
+}
+
+model AccountingConnection {
+  id             String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyId      String             @db.Uuid
+  provider       AccountingProvider @default(ENTIX_IO)
+  externalTenantId String?
+  status         IntegrationStatus  @default(DISCONNECTED)
+  lastSyncAt     DateTime?
+  lastError      String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  company        Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  syncRuns       IntegrationSyncRun[]
+
+  @@unique([companyId, provider])
+  @@schema("automation")
+}
+
+model AccountingSnapshot {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyId           String   @db.Uuid
+  period              String
+  currency            String   @default("SAR")
+  revenue             Decimal  @default(0) @db.Decimal(18, 2)
+  expenses            Decimal  @default(0) @db.Decimal(18, 2)
+  outstandingInvoices Decimal  @default(0) @db.Decimal(18, 2)
+  complianceWarnings  Int      @default(0)
+  source              String   @default("entix.io")
+  capturedAt          DateTime @default(now())
+  company             Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, period, source])
+  @@schema("automation")
+}
+
+model IntegrationSyncRun {
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  connectionId String           @db.Uuid
+  status      IntegrationRunStatus
+  startedAt   DateTime          @default(now())
+  finishedAt  DateTime?
+  recordsRead Int               @default(0)
+  recordsWritten Int            @default(0)
+  error       String?
+  connection  AccountingConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@index([connectionId, startedAt])
+  @@schema("automation")
+}
+
+model AuditEvent {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String?      @db.Uuid
+  actorUserId    String?
+  action         String
+  entityType     String
+  entityId       String?
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@schema("audit")
+}
+
+enum OrganizationStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+
+  @@schema("app")
+}
+
+enum MembershipRole {
+  PLATFORM_ADMIN
+  ORGANIZATION_ADMIN
+  OPERATIONS_MANAGER
+  OPERATIONS_MEMBER
+  FINANCE_VIEWER
+  AUDITOR_READONLY
+
+  @@schema("app")
+}
+
+enum MembershipStatus {
+  ACTIVE
+  SUSPENDED
+  REMOVED
+
+  @@schema("app")
+}
+
+enum InviteStatus {
+  ACTIVE
+  ACCEPTED
+  EXPIRED
+  REVOKED
+
+  @@schema("app")
+}
+
+enum CompanyStatus {
+  ACTIVE
+  ONBOARDING
+  SUSPENDED
+  ARCHIVED
+
+  @@schema("app")
+}
+
+enum RequirementArea {
+  BASIC_INFO
+  LEGAL_REGISTRATION
+  GOVERNANCE
+  FINANCE
+  OPERATIONS
+  TECHNOLOGY
+  COMPLIANCE_RISK
+
+  @@schema("app")
+}
+
+enum RequirementStatus {
+  COMPLETE
+  IN_PROGRESS
+  MISSING
+  BLOCKED
+
+  @@schema("app")
+}
+
+enum RequirementSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+
+  @@schema("app")
+}
+
+enum DocumentCategory {
+  COMMERCIAL_REGISTRATION
+  TAX_CERTIFICATE
+  ARTICLES_OF_ASSOCIATION
+  BOARD_RESOLUTION
+  BANK_LETTER
+  NATIONAL_ADDRESS
+  OTHER
+
+  @@schema("content")
+}
+
+enum DocumentStatus {
+  VALID
+  EXPIRING_SOON
+  MISSING
+  REVIEW_REQUIRED
+
+  @@schema("content")
+}
+
+enum OperationModule {
+  COMPANY_PROFILE
+  DOCUMENTS
+  TEAM
+  GOVERNANCE
+  FINANCE
+  OPERATIONS
+  TECHNOLOGY
+  COMPLIANCE
+  INTEGRATIONS
+
+  @@schema("automation")
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  BLOCKED
+  DONE
+
+  @@schema("automation")
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+
+  @@schema("automation")
+}
+
+enum AccountingProvider {
+  ENTIX_IO
+  MANUAL
+
+  @@schema("automation")
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  DISCONNECTED
+  NEEDS_REAUTH
+  ERROR
+
+  @@schema("automation")
+}
+
+enum IntegrationRunStatus {
+  SUCCESS
+  PARTIAL
+  FAILED
+
+  @@schema("automation")
+}

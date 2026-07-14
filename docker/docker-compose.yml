@@ -1,0 +1,40 @@
+# docker-compose.yml — local development fallback with Postgres.
+# Production deploys via Coolify (see ../coolify/deploy-notes.md).
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: entix_app_core
+    ports:
+      - "5432:5432"
+    volumes:
+      - entix_pgdata:/var/lib/postgresql/data
+      - ../scripts/setup-db-roles.sql:/docker-entrypoint-initdb.d/01-roles.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://entix_app_core_app:dev_app_pass@db:5432/entix_app_core?schema=app
+      MIGRATION_DATABASE_URL: postgresql://entix_app_core_migrator:dev_migrator_pass@db:5432/entix_app_core?schema=app
+      BETTER_AUTH_URL: http://localhost:3000
+      BETTER_AUTH_SECRET: dev-only-entix-app-secret-change-before-production-32chars
+      ENTIX_AUTH_MODE: invite_only
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  entix_pgdata:
