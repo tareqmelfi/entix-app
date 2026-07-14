@@ -1,0 +1,9 @@
+[phases.install]
+cmds = ["npm install -g pnpm@9.15.1", "pnpm install --frozen-lockfile"]
+
+[phases.build]
+cmds = ["pnpm prisma generate", "pnpm build"]
+depends_on = ["install"]
+
+[start]
+cmd = "pnpm start"
