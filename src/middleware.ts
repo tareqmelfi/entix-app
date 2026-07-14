@@ -9,7 +9,7 @@ import { isAuthConfigured, isDevelopmentRuntime } from "@/lib/env";
  * Public routes: /, /login, /api/auth/*, /api/health
  */
 const publicRoutes = new Set(["/", "/login"]);
-const publicApiPrefixes = ["/api/auth", "/api/health", "/api/setup-db"];
+const publicApiPrefixes = ["/api/auth", "/api/health", "/api/setup-db", "/api/ping"];
 
 function isPublicRoute(pathname: string): boolean {
   if (publicRoutes.has(pathname)) return true;
