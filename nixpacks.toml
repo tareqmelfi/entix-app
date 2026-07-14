@@ -6,4 +6,4 @@ cmds = ["pnpm prisma generate", "pnpm build"]
 depends_on = ["install"]
 
 [start]
-cmd = "pnpm start"
+cmd = "npx next start -p 3000"
