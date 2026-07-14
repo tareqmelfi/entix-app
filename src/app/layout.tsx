@@ -3,8 +3,11 @@ import type { Metadata } from "next";
 import "@/app/globals.css";
 
 export const metadata: Metadata = {
-  title: "Entix.app",
-  description: "Company management platform for structured operations."
+  title: {
+    default: "Entix.app",
+    template: "%s · Entix.app"
+  },
+  description: "منصة إدارة الشركات — عمليات، مستندات، حوكمة، وامتثال."
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -221,6 +221,7 @@ model AccountingConnection {
   syncRuns       IntegrationSyncRun[]
 
   @@unique([companyId, provider])
+  @@index([companyId, status])
   @@schema("automation")
 }
 
@@ -238,6 +239,7 @@ model AccountingSnapshot {
   company             Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([companyId, period, source])
+  @@index([companyId, capturedAt])
   @@schema("automation")
 }
 

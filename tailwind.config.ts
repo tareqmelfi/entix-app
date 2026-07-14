@@ -1,21 +1,51 @@
 import type { Config } from "tailwindcss";
+import { colors, radius, shadows, fonts } from "./src/lib/design-tokens";
 
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        ink: "#142033",
-        navy: "#061936",
-        violet: "#7c3aed",
-        mint: "#11b981",
-        amber: "#f59e0b",
-        danger: "#ef4444",
-        surface: "#ffffff",
-        canvas: "#f5f7fb"
+        // Brand
+        violet: { DEFAULT: colors.violet, hover: colors.violetHover, soft: colors.violetSoft },
+        // Dark surfaces
+        ink: colors.ink,
+        navy: { DEFAULT: colors.navy, light: colors.navyLight },
+        // Status
+        mint: { DEFAULT: colors.mint, soft: colors.mintSoft },
+        amber: { DEFAULT: colors.amber, soft: colors.amberSoft },
+        danger: { DEFAULT: colors.danger, soft: colors.dangerSoft },
+        // Neutrals
+        canvas: colors.canvas,
+        surface: { DEFAULT: colors.surface, alt: colors.surfaceAlt },
+        line: colors.line,
+        muted: { DEFAULT: colors.muted, dark: colors.mutedDark },
+        slate: colors.slate
+      },
+      borderRadius: {
+        sm: radius.sm,
+        md: radius.md,
+        lg: radius.lg,
+        xl: radius.xl
       },
       boxShadow: {
-        soft: "0 12px 32px rgba(15, 23, 42, 0.08)"
+        xs: shadows.xs,
+        sm: shadows.sm,
+        soft: shadows.soft,
+        lg: shadows.lg
+      },
+      fontFamily: {
+        sans: fonts.sans,
+        mono: fonts.mono
+      },
+      maxWidth: {
+        sidebar: "280px"
+      },
+      gridTemplateColumns: {
+        dashboard: "280px 1fr"
+      },
+      transitionProperty: {
+        sidebar: "width, padding"
       }
     }
   },

@@ -11,7 +11,7 @@ const envSchema = z.object({
   ENTIX_AUTH_MODE: z.enum(["invite_only", "admin_only", "open"]).default("invite_only"),
   ENTIX_ADMIN_EMAILS: z.string().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
-  ENTIX_IO_API_URL: z.string().url().optional(),
+  ENTIX_IO_API_URL: z.string().url().or(z.literal("")).optional(),
   ENTIX_IO_API_TOKEN: z.string().optional(),
   ENTIX_IO_WEBHOOK_SECRET: z.string().optional()
 });

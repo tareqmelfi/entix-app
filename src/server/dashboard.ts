@@ -70,13 +70,14 @@ const targetProgress: Record<RequirementArea, number> = {
   COMPLIANCE_RISK: 10
 };
 
-export async function getCompanyDashboard(): Promise<DashboardData> {
+export async function getCompanyDashboard(companyId?: string): Promise<DashboardData> {
   if (!isDatabaseConfigured()) {
     return getBaselineDashboard();
   }
 
   try {
     const company = await prisma.company.findFirst({
+      where: companyId ? { id: companyId } : undefined,
       orderBy: { updatedAt: "desc" },
       include: {
         requirements: true,

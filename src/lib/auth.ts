@@ -14,12 +14,18 @@ const socialProviders = isGoogleAuthConfigured()
     }
   : {};
 
+function resolveAuthSecret(): string {
+  if (env.BETTER_AUTH_SECRET) return env.BETTER_AUTH_SECRET;
+  if (env.NODE_ENV === "development") {
+    return "dev-only-entix-app-secret-change-before-production";
+  }
+  throw new Error("BETTER_AUTH_SECRET is required in production.");
+}
+
 export const auth = betterAuth({
   appName: "Entix.app",
   baseURL: env.BETTER_AUTH_URL,
-  secret:
-    env.BETTER_AUTH_SECRET ??
-    "dev-only-entix-app-secret-change-before-production",
+  secret: resolveAuthSecret(),
   database: prismaAdapter(prisma, {
     provider: "postgresql"
   }),
