@@ -2,7 +2,6 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  output: "standalone",
   experimental: {
     serverComponentsExternalPackages: ["@prisma/client", "better-auth"]
   },
